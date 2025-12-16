@@ -1,0 +1,58 @@
+version: "3"
+
+tasks:
+  default:
+    silent: true
+    desc: "List all available tasks"
+    cmds:
+      - task --list
+
+  # ---------------------------------------------------------------------------
+  # Development Tasks
+  # ---------------------------------------------------------------------------
+
+  test:
+    silent: true
+    desc: "Run all tests"
+    cmds:
+      - go test ./...
+
+  test:coverage:
+    silent: true
+    desc: "Run tests with coverage report"
+    cmds:
+      - go test -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out
+
+  lint:
+    silent: true
+    desc: "Run linter"
+    cmds:
+      - golangci-lint run ./...
+
+  fmt:
+    silent: true
+    desc: "Format Go code"
+    cmds:
+      - gofmt -w .
+
+  # ---------------------------------------------------------------------------
+  # Dependency Management
+  # ---------------------------------------------------------------------------
+
+  deps:
+    silent: true
+    desc: "Update dependencies"
+    cmds:
+      - go mod tidy
+      - go mod download
+      - echo "✅ Dependencies updated"
+
+  vendor:
+    silent: true
+    desc: "Create vendor directory"
+    cmds:
+      - go mod tidy
+      - go mod download
+      - go mod vendor
+      - echo "✅ Vendor directory created"
