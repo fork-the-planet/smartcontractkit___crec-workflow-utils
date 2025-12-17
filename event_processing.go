@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"math"
 	"math/big"
 	"reflect"
 	"strconv"
@@ -348,6 +349,16 @@ func PostSignedEvent(cfg *Config, rt cre.Runtime, eventName, address string, pre
 		return "", err
 	}
 	return pre.Base64Event, nil
+}
+
+// CheckResponse validates an HTTP response status code and returns it as int.
+// Returns an error if the status code exceeds int32 bounds.
+func CheckResponse(resp *httpcap.Response) (int, error) {
+	code := resp.StatusCode
+	if code > math.MaxInt32 {
+		return 0, fmt.Errorf("API responded with invalid status code %d", code)
+	}
+	return int(code), nil
 }
 
 // DecodeEventParams decodes an EVM log's topics/data into a named parameter map, using the provided ABI JSON and event-name.

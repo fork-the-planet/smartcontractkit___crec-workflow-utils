@@ -27,6 +27,7 @@ func PBToUint64(b *pb.BigInt) uint64 {
 
 // NewEVMLogFilter returns a FilterLogTriggerRequest for a single-address single-event subscription,
 // using FINALIZED confidence (common default across listeners).
+// Includes wildcard slots for up to 3 indexed parameters.
 func NewEVMLogFilter(contractAddr string, eventSigHash []byte) *evm.FilterLogTriggerRequest {
 	return &evm.FilterLogTriggerRequest{
 		Addresses: [][]byte{
@@ -34,6 +35,9 @@ func NewEVMLogFilter(contractAddr string, eventSigHash []byte) *evm.FilterLogTri
 		},
 		Topics: []*evm.TopicValues{
 			{Values: [][]byte{eventSigHash}},
+			{}, // Topic 1 (indexed param wildcard)
+			{}, // Topic 2 (indexed param wildcard)
+			{}, // Topic 3 (indexed param wildcard)
 		},
 		Confidence: evm.ConfidenceLevel_CONFIDENCE_LEVEL_FINALIZED,
 	}
