@@ -255,7 +255,7 @@ func TestEVMHelpers_NewEVMLogFilter(t *testing.T) {
 		eventSigHash1 := []byte{0x01, 0x02, 0x03, 0x04}
 		eventSigHash2 := []byte{0x05, 0x06, 0x07, 0x08}
 
-		result := workflows.NewEVMLogFilter(contractAddr, [][]byte{eventSigHash1, eventSigHash2})
+		result := workflows.NewEVMLogFilter(contractAddr, [][]byte{eventSigHash1, eventSigHash2}, evm.ConfidenceLevel_CONFIDENCE_LEVEL_LATEST)
 
 		require.NotNil(t, result)
 		assert.Len(t, result.Addresses, 1)
@@ -263,11 +263,33 @@ func TestEVMHelpers_NewEVMLogFilter(t *testing.T) {
 		assert.Len(t, result.Topics[0].Values, 2)
 		assert.Contains(t, result.Topics[0].Values, eventSigHash1)
 		assert.Contains(t, result.Topics[0].Values, eventSigHash2)
-		assert.Equal(t, evm.ConfidenceLevel_CONFIDENCE_LEVEL_FINALIZED, result.Confidence)
+		assert.Equal(t, evm.ConfidenceLevel_CONFIDENCE_LEVEL_LATEST, result.Confidence)
 	})
+}
+
+func TestConfidenceLevelFromString(t *testing.T) {
+	tests := []struct {
+		name     string
+		in       string
+		expected evm.ConfidenceLevel
+	}{
+		{"empty", "", evm.ConfidenceLevel_CONFIDENCE_LEVEL_LATEST},
+		{"whitespace_only", "  ", evm.ConfidenceLevel_CONFIDENCE_LEVEL_LATEST},
+		{"unknown", "unknown", evm.ConfidenceLevel_CONFIDENCE_LEVEL_LATEST},
+		{"latest_lower", "latest", evm.ConfidenceLevel_CONFIDENCE_LEVEL_LATEST},
+		{"latest_mixed", "LATEST", evm.ConfidenceLevel_CONFIDENCE_LEVEL_LATEST},
+		{"safe_lower", "safe", evm.ConfidenceLevel_CONFIDENCE_LEVEL_SAFE},
+		{"safe_mixed", "SAFE", evm.ConfidenceLevel_CONFIDENCE_LEVEL_SAFE},
+		{"finalized_lower", "finalized", evm.ConfidenceLevel_CONFIDENCE_LEVEL_FINALIZED},
+		{"finalized_mixed", "FINALIZED", evm.ConfidenceLevel_CONFIDENCE_LEVEL_FINALIZED},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, workflows.ConfidenceLevelFromString(tt.in))
+		})
+	}
 }
 
 func ptrUint64(v uint64) *uint64 {
 	return &v
 }
-

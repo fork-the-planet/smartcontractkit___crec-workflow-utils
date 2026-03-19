@@ -21,6 +21,9 @@ type Config struct {
 	ChainSelector string  `yaml:"chainSelector"          json:"chainSelector"`
 	WatcherID     string  `yaml:"watcherID"              json:"watcherID"`
 	WorkflowName  string  `yaml:"workflowName"           json:"workflowName"`
+	// ConfidenceLevel is the EVM log trigger confidence: "finalized", "safe", or "latest".
+	// Defaults to "latest" when omitted after [ParseWorkflowConfig].
+	ConfidenceLevel string `yaml:"confidenceLevel,omitempty" json:"confidenceLevel,omitempty"`
 
 	DetectEventTriggerConfig DetectEventTriggerConfig `yaml:"detectEventTriggerConfig" json:"detectEventTriggerConfig"`
 }
@@ -95,6 +98,10 @@ func ParseWorkflowConfig(b []byte) (*Config, error) {
 	}
 	if cfg.ChainSelector == "" || cfg.ChainSelector == "0" {
 		return nil, fmt.Errorf("chain selector is required")
+	}
+
+	if strings.TrimSpace(cfg.ConfidenceLevel) == "" {
+		cfg.ConfidenceLevel = "latest"
 	}
 
 	// No hard validation here; downstream helpers handle defaults/fallbacks.

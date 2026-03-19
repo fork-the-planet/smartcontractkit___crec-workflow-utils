@@ -4,23 +4,12 @@ import (
 	"errors"
 	"log/slog"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRetry(t *testing.T) {
-	// Override configuration for testing to ensure tests run fast.
-	// We save the original values and defer their restoration.
-	originalDelay := InitialRetryDelay
-	originalAttempts := Attempts
-	InitialRetryDelay = 1 * time.Millisecond
-	Attempts = 2
-	defer func() {
-		InitialRetryDelay = originalDelay
-		Attempts = originalAttempts
-	}()
-
+	fastRetry := &RetryConfig{MaxAttempts: 2, InitialDelay: "1ms"}
 	logger := slog.Default()
 
 	t.Run("InstantAvailability", func(t *testing.T) {
@@ -30,7 +19,7 @@ func TestRetry(t *testing.T) {
 			return "success", nil
 		}
 
-		val, err := Retry(logger, "test-instant", fn)
+		val, err := Retry(logger, "test-instant", fastRetry, fn)
 		assert.NoError(t, err)
 		assert.Equal(t, "success", val)
 		assert.Equal(t, 1, callCount)
@@ -44,9 +33,9 @@ func TestRetry(t *testing.T) {
 			return "", expectedErr
 		}
 
-		val, err := Retry(logger, "test-unavailable", fn)
+		val, err := Retry(logger, "test-unavailable", fastRetry, fn)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "test-unavailable failed after 2 Attempts")
+		assert.Contains(t, err.Error(), "test-unavailable failed after 2 attempts")
 		assert.ErrorIs(t, err, expectedErr)
 		assert.Equal(t, "", val)
 		assert.Equal(t, 2, callCount)
@@ -54,7 +43,6 @@ func TestRetry(t *testing.T) {
 
 	t.Run("AvailabilityAfterSomeTime", func(t *testing.T) {
 		callCount := 0
-		// Fails 1 time, succeeds on the 2nd
 		fn := func() (string, error) {
 			callCount++
 			if callCount < 2 {
@@ -63,7 +51,7 @@ func TestRetry(t *testing.T) {
 			return "recovered", nil
 		}
 
-		val, err := Retry(logger, "test-recover", fn)
+		val, err := Retry(logger, "test-recover", fastRetry, fn)
 		assert.NoError(t, err)
 		assert.Equal(t, "recovered", val)
 		assert.Equal(t, 2, callCount)
@@ -77,10 +65,23 @@ func TestRetry(t *testing.T) {
 			return "", StopRetry(expectedErr)
 		}
 
-		val, err := Retry(logger, "test-stop-retry", fn)
+		val, err := Retry(logger, "test-stop-retry", fastRetry, fn)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, expectedErr)
 		assert.Equal(t, "", val)
-		assert.Equal(t, 1, callCount) // Should stop after first attempt
+		assert.Equal(t, 1, callCount)
 	})
+}
+
+func TestRetry_negativeMaxAttemptsUsesDefault(t *testing.T) {
+	logger := slog.Default()
+	callCount := 0
+	fn := func() (string, error) {
+		callCount++
+		return "", errors.New("fail")
+	}
+	_, err := Retry(logger, "test-negative-attempts", &RetryConfig{MaxAttempts: -1, InitialDelay: "1ms"}, fn)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "test-negative-attempts failed after 3 attempts")
+	assert.Equal(t, 3, callCount)
 }
