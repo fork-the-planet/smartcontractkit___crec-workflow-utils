@@ -23,6 +23,8 @@
 //	func OnLog(cfg *workflows.Config, rt cre.Runtime, payload *evm.Log) (string, error) {
 //	    evmEvent, err := workflows.BuildEVMEventFromLog(rt, cfg, payload)
 //	    if err != nil { return "", err }
+//	    abiJSON, err := workflows.GetContractABI(cfg, cfg.DetectEventTriggerConfig.ContractName)
+//	    if err != nil { return "", err }
 //	    eventName, err := workflows.GetEventNameFromLog(cfg, payload, abiJSON)
 //	    if err != nil { return "", err }
 //	    ve, err := workflows.BuildVerifiableEventForEVMEvent(cfg, evmEvent, cfg.Service, eventName, nil)
